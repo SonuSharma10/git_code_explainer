@@ -68,6 +68,25 @@ def load_repo(request):
             repo_mapper.touch_user_repo(request.user.pk, owner, name)
         
         discovery = github_service.extract_repo_keys_and_setup(owner, name, tree, branch)
+        past_conversations = []
+        if request.user.is_authenticated:
+            past_ids = chat_mapper.list_past_conversation_ids(
+                request.user.pk,
+                limit=settings.PAST_CONVERSATION_LIMIT,
+                repo_owner=owner,
+                repo_name=name,
+            )
+            past_conversations = [
+                {
+                    'conversation_id': row['conversation_id'],
+                    'session_type': row['session_type'],
+                    'repo_owner': row.get('repo_owner'),
+                    'repo_name': row.get('repo_name'),
+                    'created_at': row['created_at'].isoformat() if row['created_at'] else None,
+                    'context_identifier': row['context_identifier'],
+                }
+                for row in past_ids
+            ]
 
         return JsonResponse(
             {
@@ -80,6 +99,7 @@ def load_repo(request):
                 'description': meta.get('description') or '',
                 'tree': nested,
                 'discovery': discovery,
+                'past_conversations': past_conversations,
             }
         )
     except GitHubServiceError as exc:
@@ -140,6 +160,22 @@ def ai_chat(request):
         history = []
     previous_interaction_id = existing['gemini_interaction_id'] if existing else None
 
+    extra_context = data.get('extra_context') or ''
+    branch = (data.get('branch') or 'main').strip()
+
+    # If asking about codebase or repo architecture, automatically fetch README & all repo .md files
+    if repo_owner and repo_name:
+        try:
+            repo_docs = github_service.get_all_repo_markdown_and_key_context(repo_owner, repo_name, branch=branch)
+            if repo_docs:
+                extra_context = (
+                    f"=== REPOSITORY DOCUMENTATION & CODE MANIFESTS ===\n"
+                    f"{repo_docs}\n\n"
+                    f"{extra_context}"
+                ).strip()
+        except Exception:
+            pass
+
     try:
         result = gemini_service.explain_or_chat(
             request.user.pk,
@@ -151,7 +187,7 @@ def ai_chat(request):
             file_content=data.get('file_content') or '',
             repo_owner=repo_owner or '',
             repo_name=repo_name or '',
-            extra_context=data.get('extra_context') or '',
+            extra_context=extra_context,
             previous_interaction_id=previous_interaction_id,
             history=history,
         )
@@ -204,6 +240,8 @@ def ai_chat(request):
                 {
                     'conversation_id': row['conversation_id'],
                     'session_type': row['session_type'],
+                    'repo_owner': row.get('repo_owner'),
+                    'repo_name': row.get('repo_name'),
                     'created_at': row['created_at'].isoformat() if row['created_at'] else None,
                     'context_identifier': row['context_identifier'],
                 }
@@ -219,11 +257,21 @@ def conversation_detail(request, conversation_id):
     row = chat_mapper.get_conversation(conversation_id)
     if not row or row['user_id'] != request.user.pk:
         return _json_error('Conversation not found.', 404)
+    raw_messages = row['messages']
+    if isinstance(raw_messages, str):
+        try:
+            parsed_messages = json.loads(raw_messages)
+        except Exception:
+            parsed_messages = []
+    else:
+        parsed_messages = list(raw_messages or [])
     return JsonResponse(
         {
             'ok': True,
             'conversation_id': row['conversation_id'],
-            'messages': row['messages'],
+            'repo_owner': row.get('repo_owner'),
+            'repo_name': row.get('repo_name'),
+            'messages': parsed_messages,
             'prompt_template_id': row['prompt_template_id'],
             'session_type': row['session_type'],
             'context_identifier': row['context_identifier'],

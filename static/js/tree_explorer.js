@@ -202,10 +202,16 @@
         if (matches) {
           const btn = document.createElement("button");
           btn.type = "button";
+          btn.draggable = true;
           const icon = getFileIcon(node.name);
           btn.innerHTML = `<span>${icon}</span> <span>${node.name}</span>`;
           btn.dataset.filePath = node.path;
-          btn.title = node.path;
+          btn.title = `Click to view or Drag to Chat: ${node.path}`;
+          btn.addEventListener("dragstart", (e) => {
+            e.dataTransfer.setData("text/plain", node.path);
+            e.dataTransfer.setData("application/repex-file", node.path);
+            e.dataTransfer.effectAllowed = "copy";
+          });
           wrap.appendChild(btn);
         }
       }

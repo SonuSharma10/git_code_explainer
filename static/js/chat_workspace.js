@@ -21,6 +21,9 @@
 
   const treeMount = root.querySelector("[data-tree]");
   const treeFilter = root.querySelector("[data-tree-filter]");
+  if (treeFilter) {
+    treeFilter.value = "";
+  }
   const codeEl = root.querySelector("[data-code]");
   const codePre = root.querySelector("[data-code-pre]");
   const markdownPreview = root.querySelector("[data-markdown-preview]");
@@ -258,9 +261,12 @@
     });
   });
 
-  // Chat composer form
+  // Chat composer form & Drag-and-Drop file attachments
   const chatForm = root.querySelector("[data-chat-form]");
   const chatTextarea = chatForm?.querySelector("textarea");
+  const dropOverlay = root.querySelector("[data-drop-overlay]");
+  const attachedRow = root.querySelector("[data-attached-row]");
+  const attachedFiles = new Map(); // path -> { path, content }
 
   chatTextarea?.addEventListener("keydown", (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -268,6 +274,90 @@
       chatForm.requestSubmit();
     }
   });
+
+  // Drag and drop events on chatPane
+  if (chatPane) {
+    ['dragenter', 'dragover'].forEach((eventName) => {
+      chatPane.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        chatPane.classList.add("drag-over");
+        if (dropOverlay) dropOverlay.removeAttribute("hidden");
+      });
+    });
+
+    ['dragleave', 'drop'].forEach((eventName) => {
+      chatPane.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        chatPane.classList.remove("drag-over");
+        if (dropOverlay) dropOverlay.setAttribute("hidden", "");
+      });
+    });
+
+    chatPane.addEventListener("drop", async (e) => {
+      const repexPath = e.dataTransfer.getData("application/repex-file") || e.dataTransfer.getData("text/plain");
+      if (repexPath && state.owner && state.name) {
+        // Tree node dropped
+        await attachRepoFile(repexPath);
+      } else if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        // Local file dropped from OS desktop/folder
+        for (let file of e.dataTransfer.files) {
+          const reader = new FileReader();
+          reader.onload = (readEvent) => {
+            const content = readEvent.target.result;
+            attachedFiles.set(file.name, { path: file.name, content });
+            renderAttachedChips();
+          };
+          reader.readAsText(file);
+        }
+      }
+    });
+  }
+
+  async function attachRepoFile(path) {
+    if (attachedFiles.has(path)) return;
+    try {
+      const data = await get(`/files/?owner=${encodeURIComponent(state.owner)}&name=${encodeURIComponent(state.name)}&path=${encodeURIComponent(path)}&ref=${encodeURIComponent(state.branch)}`);
+      if (data.ok && data.content) {
+        attachedFiles.set(path, { path, content: data.content });
+        renderAttachedChips();
+        if (chatTextarea && !chatTextarea.value.trim()) {
+          chatTextarea.value = `Explain \`${path}\` and how its API and logic function.`;
+        }
+      }
+    } catch (err) {
+      console.warn("Could not attach repo file:", err);
+    }
+  }
+
+  function renderAttachedChips() {
+    if (!attachedRow) return;
+    if (attachedFiles.size === 0) {
+      attachedRow.setAttribute("hidden", "");
+      attachedRow.innerHTML = "";
+      return;
+    }
+    attachedRow.removeAttribute("hidden");
+    attachedRow.innerHTML = `<span style="font-size: 11px; font-weight: 700; color: var(--color-accent); text-transform: uppercase;">Attached Files:</span>`;
+    attachedFiles.forEach((fileObj, path) => {
+      const chip = document.createElement("span");
+      chip.className = "mh-attached-chip";
+      chip.innerHTML = `<span>📎 ${escapeHtml(path.split("/").pop())}</span> <button type="button" class="mh-remove-chip" title="Remove attachment">×</button>`;
+      chip.querySelector(".mh-remove-chip").addEventListener("click", () => {
+        attachedFiles.delete(path);
+        renderAttachedChips();
+      });
+      attachedRow.appendChild(chip);
+    });
+  }
+
+  function escapeHtml(value) {
+    return String(value)
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;");
+  }
 
   // -------------------------------------------------------------
   // LocalStorage Chat Persistence & History Restoration
@@ -326,11 +416,6 @@
       alert("Failed to parse saved conversation history.");
     }
   }
-
-  // Restore history button
-  root.querySelector("[data-restore-chat]")?.addEventListener("click", () => {
-    restoreHistoryFromStorage();
-  });
 
   // Gemini Status Button -> opens Profile Vault if logged in
   const geminiStatusBtn = root.querySelector("#geminiStatusBtn");
@@ -413,6 +498,17 @@
     const eli5Input = root.querySelector("[data-eli5]");
     const isEli5 = eli5Input ? eli5Input.checked : promptSelect.value === "eli5";
 
+    // Build extra context from any dragged-and-dropped attached files
+    let droppedContext = "";
+    if (attachedFiles.size > 0) {
+      attachedFiles.forEach((fileObj, path) => {
+        droppedContext += `\n--- [ATTACHED FILE: ${path}] ---\n${fileObj.content}\n`;
+      });
+      // Clear attachments after sending
+      attachedFiles.clear();
+      renderAttachedChips();
+    }
+
     const payload = {
       provider: provider || "gemini",
       message,
@@ -422,8 +518,10 @@
       eli5: isEli5,
       repo_owner: state.owner,
       repo_name: state.name,
+      branch: state.branch,
       file_path: state.filePath,
       file_content: state.fileContent,
+      extra_context: droppedContext,
       context_identifier: state.filePath || `${state.owner}/${state.name}`,
     };
 
@@ -462,9 +560,45 @@
     if (!id) return;
     const data = await get(`/ai/conversations/${id}/`);
     if (!data.ok) return;
+
     state.conversationId = data.conversation_id;
     transcript.innerHTML = "";
-    (data.messages || []).forEach((item) => appendBubble(item.role, item.content));
+
+    // Welcome banner indicating loaded conversation
+    const repoLabel = data.repo_owner && data.repo_name ? `${data.repo_owner}/${data.repo_name}` : "repository";
+    const contextLabel = data.context_identifier ? ` · <code>${escapeHtml(data.context_identifier)}</code>` : "";
+    const loadedBanner = document.createElement("div");
+    loadedBanner.className = "mh-chat-welcome";
+    loadedBanner.style.padding = "10px 14px";
+    loadedBanner.style.marginBottom = "14px";
+    loadedBanner.innerHTML = `
+      <div style="font-weight: 700; color: var(--color-accent); margin-bottom: 2px;">💬 Loaded Session: ${escapeHtml(repoLabel)}${contextLabel}</div>
+      <div style="font-size: 11px; opacity: 0.75;">Conversation ID: ${escapeHtml(data.conversation_id)}</div>
+    `;
+    transcript.appendChild(loadedBanner);
+
+    const msgs = data.messages || [];
+    msgs.forEach((item) => {
+      const text = item.content || item.text || "";
+      if (text) {
+        appendBubble(item.role || "user", text, false);
+      }
+    });
+
+    transcript.scrollTop = transcript.scrollHeight;
+
+    // If session has a file context and we're currently in the same repo, auto-open it
+    if (data.context_identifier && state.owner && data.repo_owner && state.owner.toLowerCase() === data.repo_owner.toLowerCase() && state.name && data.repo_name && state.name.toLowerCase() === data.repo_name.toLowerCase()) {
+      if (data.context_identifier.includes(".") && !data.context_identifier.includes("/")) {
+        openFile(data.context_identifier);
+      } else if (data.context_identifier.includes("/")) {
+        const parts = data.context_identifier.split("/");
+        if (parts.length > 2 || parts[parts.length - 1].includes(".")) {
+          openFile(data.context_identifier);
+        }
+      }
+    }
+
     if (download) download.href = `/ai/notes/?conversation_id=${data.conversation_id}`;
   });
 
@@ -608,27 +742,24 @@
       brainstormLink.href = `/issues/?url=https://github.com/${encodeURIComponent(data.owner)}/${encodeURIComponent(data.name)}`;
     }
 
-    // Auto-restore chat from local storage if user is logged in and stored history exists
-    if (isAuthenticated) {
-      const storedHistory = localStorage.getItem(getStorageKey());
-      if (storedHistory) {
-        try {
-          const msgs = JSON.parse(storedHistory);
-          if (msgs && msgs.length > 0) {
-            transcript.innerHTML = "";
-            msgs.forEach((m) => appendBubble(m.role, m.text, false));
-            const notice = document.createElement("div");
-            notice.className = "mh-chat-welcome";
-            notice.style.padding = "6px 10px";
-            notice.style.margin = "8px 0";
-            notice.innerHTML = `<span style="color: var(--color-accent); font-size: 12px; font-weight: 600;">✓ Auto-restored conversation from local storage.</span>`;
-            transcript.appendChild(notice);
-            transcript.scrollTop = transcript.scrollHeight;
-          }
-        } catch (e) {
-          console.warn("Could not auto-restore stored chat:", e);
-        }
-      }
+    // Clear and reset tree search filter so it is never pre-filled from old searches
+    if (treeFilter) {
+      treeFilter.value = "";
+    }
+
+    // Always give a fresh, clean chat window when loading a repository
+    state.conversationId = "";
+    transcript.innerHTML = `
+      <div class="mh-chat-welcome">
+        <div class="mh-welcome-icon">✨</div>
+        <h3>Ask questions about ${escapeHtml(data.name || "this repo")}</h3>
+        <p>Flowcharts &amp; architecture diagrams render directly inside the chat bubbles with Markdown and copy buttons!</p>
+      </div>
+    `;
+
+    // Render past conversations specific to this loaded repo
+    if (data.past_conversations) {
+      renderPast(data.past_conversations);
     }
 
     // Handle discovery banner
@@ -921,15 +1052,31 @@
   function renderPast(items) {
     const list = root.querySelector("[data-past]");
     if (!list) return;
+    const accordionSummary = root.querySelector("[data-past-strip] summary span");
+    if (accordionSummary) {
+      accordionSummary.textContent = `🕒 Previous AI Chat Sessions (${(items || []).length})`;
+    }
     list.innerHTML = "";
+    if (!items || items.length === 0) {
+      list.innerHTML = '<div class="mh-muted-text">No previous chat sessions for this repository.</div>';
+      return;
+    }
     items.forEach((item) => {
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "mh-past-item";
       btn.dataset.loadConv = item.conversation_id;
+      const repoLabel = item.repo_owner && item.repo_name ? `${item.repo_owner}/${item.repo_name}` : (item.repo_name || item.conversation_id);
+      const hasFileContext = item.context_identifier && item.context_identifier !== repoLabel;
+      const fileContextSpan = hasFileContext
+        ? `<span style="opacity: 0.8; font-weight: normal; margin-left: 4px;">· ${escapeHtml(item.context_identifier)}</span>`
+        : "";
+      btn.title = `Load chat history for ${repoLabel}${hasFileContext ? ' (' + item.context_identifier + ')' : ''}`;
       btn.innerHTML = `
-        <span class="mh-past-id">${item.conversation_id}</span>
-        <span class="mh-past-tag">${item.session_type}</span>
+        <span class="mh-past-id">
+          📁 <strong>${escapeHtml(repoLabel)}</strong>${fileContextSpan}
+        </span>
+        <span class="mh-past-tag">${escapeHtml(item.session_type || 'code_explanation')}</span>
       `;
       list.appendChild(btn);
     });

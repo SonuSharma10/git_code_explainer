@@ -74,8 +74,13 @@
         </summary>
         <div class="mh-past-list" data-past>
           {% for item in past_conversations %}
-            <button type="button" class="mh-past-item" data-load-conv="{{ item.conversation_id }}">
-              <span class="mh-past-id">{{ item.conversation_id }}</span>
+            <button type="button" class="mh-past-item" data-load-conv="{{ item.conversation_id }}" title="Load chat history for {{ item.repo_owner|default:'' }}/{{ item.repo_name|default:'' }} ({{ item.context_identifier|default:'' }})">
+              <span class="mh-past-id">
+                📁 <strong>{{ item.repo_owner|default:'' }}{% if item.repo_name %}/{{ item.repo_name }}{% endif %}</strong>
+                {% if item.context_identifier and item.context_identifier != item.repo_owner|add:'/'|add:item.repo_name %}
+                  <span style="opacity: 0.8; font-weight: normal; margin-left: 4px;">· {{ item.context_identifier }}</span>
+                {% endif %}
+              </span>
               <span class="mh-past-tag">{{ item.session_type }}</span>
             </button>
           {% empty %}
@@ -152,7 +157,7 @@
 
       <!-- Quick Filter for tree -->
       <div class="mh-filter-box">
-        <input class="mh-filter-input" data-tree-filter placeholder="Filter files (e.g. .py, utils)...">
+        <input class="mh-filter-input" data-tree-filter autocomplete="off" value="" placeholder="Filter files (e.g. .py, utils)...">
       </div>
 
       <!-- Recent Repos -->
@@ -229,10 +234,6 @@
           <span>AI Explainer</span>
         </div>
         <div class="mh-pane-actions">
-          <button type="button" class="mh-btn mh-btn-sm mh-btn-ghost" data-restore-chat title="Restore this repository's conversation history from your browser cache">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
-            Restore History
-          </button>
           <button type="button" class="mh-btn mh-btn-sm mh-btn-ghost" data-clear-chat title="Clear active chat conversation">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
             Clear Chat
@@ -294,6 +295,15 @@
           <p>Flowcharts &amp; architecture diagrams render directly inside the chat bubbles with Markdown and copy buttons!</p>
         </div>
       </div>
+
+      <!-- Drag and Drop Overlay for Code Files -->
+      <div class="mh-drop-overlay" data-drop-overlay hidden>
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="M12 12v6"/><path d="m9 15 3-3 3 3"/></svg>
+        <span>Drop file or tree node here to analyze with Gemini</span>
+      </div>
+
+      <!-- Attached files preview row -->
+      <div class="mh-attached-row" data-attached-row hidden></div>
 
       <!-- Composer -->
       <form class="mh-composer" data-chat-form>

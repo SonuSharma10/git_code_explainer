@@ -211,20 +211,19 @@ def build_user_prompt(
 
     return f"""<context>
 Repository: {repo_owner}/{repo_name}
-Active file: {file_path or '(none selected)'}
-Extra context:
-{extra_context or '(none)'}
+Active File: {file_path or '(none)'}
 
-<code>
-{clipped or '(no file content loaded)'}
-</code>
+{extra_context}
+
+File Code / Attachment:
+```
+{clipped or '(no direct code attached)'}
+```
 </context>
 {eli5_note}
-<task>
+User Request:
 {user_message}
-</task>
-<final_instruction>
-Based on the information above, answer the task. Remember to think step-by-step before answering.
-Place specific instructions at the end of the prompt as recommended for long context.
-</final_instruction>
+
+Instructions:
+Provide a clear, accurate, and concise answer strictly grounded in the codebase files, architecture manifests, and documentation provided above. Avoid hallucination or generic placeholders. If code is needed, write clean, production-ready snippets with brief explanatory notes.
 """

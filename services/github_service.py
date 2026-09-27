@@ -204,3 +204,71 @@ def extract_repo_keys_and_setup(owner, repo, tree_entries, ref='main'):
         'readme_length': len(readme_text),
         'readme_excerpt': readme_text[:6000] if readme_text else '',
     }
+
+
+def get_all_repo_markdown_and_key_context(owner, repo, branch='main', max_total_chars=40000):
+    """
+    Fetches README and all .md / doc files in the repo tree, plus key architecture files,
+    concatenating them cleanly so Gemini has true, grounded codebase context.
+    """
+    context_chunks = []
+    total_chars = 0
+
+    try:
+        tree = get_tree(owner, repo, branch)
+    except Exception:
+        tree = []
+
+    # Prioritize README files first, then docs/*.md, then other .md files
+    md_entries = []
+    code_entries = []
+    
+    important_code_files = {
+        'package.json', 'pyproject.toml', 'requirements.txt', 'cargo.toml', 
+        'go.mod', 'pom.xml', 'docker-compose.yml', 'dockerfile', 'makefile'
+    }
+
+    for item in tree:
+        if item.get('type') == 'blob':
+            path = item.get('path', '')
+            lower = path.lower()
+            if lower.endswith(('.md', '.rst', '.txt')) or 'readme' in lower:
+                md_entries.append(path)
+            elif lower.split('/')[-1] in important_code_files:
+                code_entries.append(path)
+
+    # Sort so root README and docs come first
+    md_entries.sort(key=lambda p: (
+        0 if 'readme' in p.lower() else (1 if p.lower().startswith('docs/') else 2),
+        len(p)
+    ))
+
+    # Fetch and append markdown files
+    for path in md_entries[:8]:  # Top 8 markdown/doc files
+        if total_chars >= max_total_chars:
+            break
+        try:
+            content_obj = get_file_content(owner, repo, path, branch)
+            text = (content_obj.get('content') or '').strip()
+            if text:
+                chunk = f"--- [FILE: {path}] ---\n{text}\n"
+                context_chunks.append(chunk)
+                total_chars += len(chunk)
+        except Exception:
+            continue
+
+    # Fetch and append key package/config manifests
+    for path in code_entries[:4]:
+        if total_chars >= max_total_chars:
+            break
+        try:
+            content_obj = get_file_content(owner, repo, path, branch)
+            text = (content_obj.get('content') or '').strip()
+            if text:
+                chunk = f"--- [MANIFEST: {path}] ---\n{text[:3000]}\n"
+                context_chunks.append(chunk)
+                total_chars += len(chunk)
+        except Exception:
+            continue
+
+    return "\n".join(context_chunks)

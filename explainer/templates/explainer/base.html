@@ -153,17 +153,14 @@
   </div>
   {% endif %}
   <!-- ============================================================
-       Structured Web Footer: About, Tech Stack & Licensing
+       Clean & Focused Footer: About & Platform
        ============================================================ -->
   <footer class="mh-footer" id="about">
-    <div class="mh-footer-inner">
+    <div class="mh-footer-inner" style="grid-template-columns: 2fr 1fr; gap: 24px;">
       <div>
-        <div class="mh-footer-brand-title">About Repo Explainer</div>
+        <div class="mh-footer-brand-title">Repo Explainer</div>
         <p class="mh-footer-desc">
-          <strong>Repo Explainer</strong> is designed strictly for <strong>educational and learning purposes</strong>. It assists software engineers, students, and open-source contributors in understanding large unfamiliar codebases, deciphering complex logic flows, and exploring architecture patterns with Google Gemini AI.
-        </p>
-        <p class="mh-footer-desc" style="margin-top: 8px;">
-          Key capabilities include interactive Mermaid architecture flowcharts, real-time API understanding, file-level deep dives, and collaborative issue mentorship.
+          AI-powered codebase intelligence for developers, students, and open-source contributors. Deeply understand repositories, trace execution flows, and explore architecture patterns with Google Gemini AI.
         </p>
       </div>
 
@@ -172,29 +169,13 @@
         <ul class="mh-footer-links">
           <li><a href="{% url 'explore' %}">Repository Explorer</a></li>
           <li><a href="{% url 'issues' %}">Issue Explainer &amp; Mentor</a></li>
-          <li><a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer">Get Gemini API Key ↗</a></li>
-          {% if user.is_authenticated %}
-            <li><a href="#" onclick="document.getElementById('vaultTriggerBtn')?.click(); return false;">Profile Vault Keys</a></li>
-          {% else %}
-            <li><a href="{% url 'login' %}">Developer Login</a></li>
-          {% endif %}
-        </ul>
-      </div>
-
-      <div>
-        <div class="mh-footer-heading">Legal &amp; Open Source</div>
-        <ul class="mh-footer-links">
-          <li><span>License: <strong>MIT License</strong></span></li>
-          <li><span>Security: <strong>Fernet AES-128 Encryption</strong></span></li>
-          <li><span>Engine: <strong>Google Gemini Pro / Flash</strong></span></li>
-          <li><span>Framework: <strong>Django &amp; Modern JS</strong></span></li>
+          <li><a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer">Free Gemini Key (Google AI Studio) ↗</a></li>
         </ul>
       </div>
     </div>
 
     <div class="mh-footer-bottom">
-      <span>© 2026 Repo Explainer. Built with Google Gemini for open-source developers worldwide.</span>
-      <span>Released under the terms of the MIT Open Source License.</span>
+      <span>© 2026 Repo Explainer · Built for developers worldwide.</span>
     </div>
   </footer>
 
