@@ -48,6 +48,9 @@
     study_notes: "Clean Markdown notes formatted for export and revision.",
   };
 
+  const codePane = root.querySelector("[data-code-pane]");
+  const chatPane = root.querySelector("[data-chat-pane]");
+
   // -------------------------------------------------------------
   // Layout & Customization Controls
   // -------------------------------------------------------------
@@ -55,6 +58,16 @@
     state.layoutMode = mode;
     localStorage.setItem("explainer_layout_mode", mode);
     if (!workspaceEl) return;
+
+    // Reset inline dimensions so resizes from one layout don't break the other layout
+    if (codePane) {
+      codePane.style.width = "";
+      codePane.style.height = "";
+    }
+    if (chatPane) {
+      chatPane.style.width = "";
+      chatPane.style.height = "";
+    }
 
     workspaceEl.classList.remove("mh-layout-chat-bottom", "mh-layout-three-pane", "mh-layout-chat-focus");
     if (mode === "three-pane") {
@@ -137,9 +150,17 @@
       treeMount.querySelectorAll("details[open]").forEach((d) => d.removeAttribute("open"));
       treeMount.querySelectorAll("button.active").forEach((b) => b.classList.remove("active"));
     }
-    // Reset code inspector
+    // Reset code inspector & dimensions
     state.filePath = "";
     state.fileContent = "";
+    if (codePane) {
+      codePane.style.width = "";
+      codePane.style.height = "";
+    }
+    if (chatPane) {
+      chatPane.style.width = "";
+      chatPane.style.height = "";
+    }
     if (titleEl) titleEl.textContent = "Select a file to inspect";
     if (markdownPreview) markdownPreview.hidden = true;
     if (codePre) codePre.hidden = false;
@@ -317,9 +338,17 @@
       </div>
     `;
 
-    // Reset code view back to repository default
+    // Reset code view and dimensions back to repository default
     state.filePath = "";
     state.fileContent = "";
+    if (codePane) {
+      codePane.style.width = "";
+      codePane.style.height = "";
+    }
+    if (chatPane) {
+      chatPane.style.width = "";
+      chatPane.style.height = "";
+    }
     if (titleEl) titleEl.textContent = "Select a file to inspect";
     if (markdownPreview) markdownPreview.hidden = true;
     if (codePre) codePre.hidden = false;

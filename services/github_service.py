@@ -97,8 +97,8 @@ def get_file_content(owner, repo, path, ref):
     raise GitHubServiceError('Unsupported file encoding from GitHub.')
 
 
-def get_issues(owner, repo, state='open', query=''):
-    data = _get(f'/repos/{quote(owner)}/{quote(repo)}/issues?state={quote(state)}&per_page=50')
+def get_issues(owner, repo, state='open', query='', page=1, per_page=15):
+    data = _get(f'/repos/{quote(owner)}/{quote(repo)}/issues?state={quote(state)}&per_page={int(per_page)}&page={int(page)}')
     issues = [item for item in data if 'pull_request' not in item]
     needle = (query or '').strip().lower()
     if needle:
@@ -109,6 +109,10 @@ def get_issues(owner, repo, state='open', query=''):
             or needle in (item.get('body') or '').lower()
         ]
     return issues
+
+
+def get_single_issue(owner, repo, number):
+    return _get(f'/repos/{quote(owner)}/{quote(repo)}/issues/{int(number)}')
 
 
 def nest_tree(entries):

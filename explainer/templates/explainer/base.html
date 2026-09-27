@@ -34,7 +34,7 @@
         </a>
         <a class="mh-nav-link" href="{% url 'issues' %}">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-          Issues Hub
+          Issue Explainer
         </a>
 
         <!-- About Modal Trigger -->
@@ -58,6 +58,23 @@
           <a class="mh-btn mh-btn-ghost" href="{% url 'login' %}">Sign In</a>
           <a class="mh-btn mh-btn-accent" href="{% url 'signup' %}">Sign Up</a>
         {% endif %}
+
+        <!-- Single Color Picker Button triggering 5-Color Palette Dropdown -->
+        <div class="mh-color-picker-wrapper">
+          <button type="button" class="mh-color-trigger-btn" id="colorTriggerBtn" aria-label="Customize Accent Color" title="Customize Accent Color">
+            <span class="mh-color-trigger-dot" id="colorTriggerDot"></span>
+          </button>
+          <div class="mh-color-dropdown" id="colorDropdown" hidden>
+            <div class="mh-color-dropdown-title">Choose Accent</div>
+            <div class="mh-color-palette" id="colorPalette">
+              <button type="button" class="mh-swatch" data-swatch-idx="0" aria-label="Color 1"></button>
+              <button type="button" class="mh-swatch" data-swatch-idx="1" aria-label="Color 2"></button>
+              <button type="button" class="mh-swatch" data-swatch-idx="2" aria-label="Color 3"></button>
+              <button type="button" class="mh-swatch" data-swatch-idx="3" aria-label="Color 4"></button>
+              <button type="button" class="mh-swatch" data-swatch-idx="4" aria-label="Color 5"></button>
+            </div>
+          </div>
+        </div>
 
         <button class="mh-theme-btn" type="button" data-theme-toggle title="Toggle Dark / Light Theme" aria-label="Toggle Theme">
           <span class="theme-icon-dark">🌙</span>

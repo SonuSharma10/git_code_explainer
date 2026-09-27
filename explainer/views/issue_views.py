@@ -14,7 +14,15 @@ from services.github_service import GitHubServiceError
 def issues_page(request):
     user_id = request.user.pk if request.user.is_authenticated else None
     recent = repo_mapper.list_recent_repos(user_id) if user_id else []
-    return render(request, 'explainer/issues.html', {'recent_repos': recent})
+    has_key = profile_mapper.has_gemini_key(user_id) if user_id else False
+    return render(
+        request,
+        'explainer/issues.html',
+        {
+            'recent_repos': recent,
+            'has_user_key': has_key,
+        },
+    )
 
 
 @require_GET
@@ -22,10 +30,28 @@ def list_issues(request):
     owner = request.GET.get('owner') or ''
     name = request.GET.get('name') or ''
     query = request.GET.get('q') or ''
+    page = int(request.GET.get('page') or 1)
+    per_page = int(request.GET.get('per_page') or 15)
+    issue_number = request.GET.get('issue_number')
+
     if not owner or not name:
         return _json_error('Load a repository first.')
     try:
-        issues = github_service.get_issues(owner, name, query=query)
+        if issue_number:
+            item = github_service.get_single_issue(owner, name, int(issue_number))
+            compact = [{
+                'number': item.get('number'),
+                'title': item.get('title'),
+                'body': item.get('body') or '',
+                'html_url': item.get('html_url'),
+                'labels': [label.get('name') for label in item.get('labels') or []],
+                'user': (item.get('user') or {}).get('login'),
+                'comments': item.get('comments', 0),
+                'created_at': item.get('created_at'),
+            }]
+            return JsonResponse({'ok': True, 'issues': compact, 'has_more': False, 'page': 1})
+
+        issues = github_service.get_issues(owner, name, query=query, page=page, per_page=per_page)
         compact = [
             {
                 'number': item.get('number'),
@@ -34,10 +60,13 @@ def list_issues(request):
                 'html_url': item.get('html_url'),
                 'labels': [label.get('name') for label in item.get('labels') or []],
                 'user': (item.get('user') or {}).get('login'),
+                'comments': item.get('comments', 0),
+                'created_at': item.get('created_at'),
             }
             for item in issues
         ]
-        return JsonResponse({'ok': True, 'issues': compact})
+        has_more = len(issues) >= per_page
+        return JsonResponse({'ok': True, 'issues': compact, 'has_more': has_more, 'page': page})
     except GitHubServiceError as exc:
         return _json_error(str(exc), 400)
 
@@ -53,8 +82,9 @@ def fix_issue(request):
     body = data.get('body') or ''
     number = data.get('number')
     message = (
-        f'Fix GitHub issue #{number}: {title}\n\n{body}\n\n'
-        'Use the provided file context if any. Return root cause, fix plan, and a git diff.'
+        f'Mentor and analyze GitHub issue #{number}: {title}\n\n'
+        f'Issue Description:\n{body}\n\n'
+        'Act as a Super Senior Software Engineer and Mentor. Break down the issue intuitively, explain the architectural root cause, brainstorm multiple approaches with trade-offs, recommend the best solution with code/diff, and provide verification advice.'
     )
     try:
         result = gemini_service.explain_or_chat(
