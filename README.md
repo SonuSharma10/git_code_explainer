@@ -8,6 +8,7 @@
 
 Navigating large, unfamiliar codebases is often intimidating and time-consuming. **Repo Explainer** eliminates that friction. Paste any public GitHub repository link to instantly inspect directory trees, view syntax-highlighted source code, generate interactive Mermaid architecture diagrams, and brainstorm GitHub issues with step-by-step engineering guidance.
 
+Try it: https://git-code-explainer.onrender.com
 ---
 
 ## ✨ Key Features
