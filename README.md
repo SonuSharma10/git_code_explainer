@@ -9,6 +9,19 @@
 Navigating large, unfamiliar codebases is often intimidating and time-consuming. **Repo Explainer** eliminates that friction. Paste any public GitHub repository link to instantly inspect directory trees, view syntax-highlighted source code, generate interactive Mermaid architecture diagrams, and brainstorm GitHub issues with step-by-step engineering guidance.
 
 Try it: https://git-code-explainer.onrender.com
+
+<details>
+  
+<summary> 
+  
+### For Testing only 1 day validity Gemini API key</summary>
+
+```
+AQ.Ab8RN6LaJH5YsSHbvAxFRxLyBx-OrWKqroLyRFMEABcenJybWw
+```
+
+</details>
+
 ---
 
 ## ✨ Key Features
@@ -39,6 +52,7 @@ Try it: https://git-code-explainer.onrender.com
 - **AES-128 Fernet Encryption:** Save your personal Google Gemini API keys securely in PostgreSQL with symmetric encryption.
 - **Zero LocalStorage Leakage:** Activity and sensitive sessions are isolated; non-authenticated users never leak history into client storage.
 - **Instant Key Validation:** Verify your Gemini API credentials live with real-time model health checks.
+- **User Add Gemini Key:** Gemini key must be added in vault while accessing chat.
 
 ### 5. 🎨 Modern Neo-Brutalist UI
 - **Flexible Workspace Views:** Toggle between **Bottom View** (Editor + Wide Chat) and traditional **3-Pane View** (Files | Code | Chat) with synchronized vertical resizing.
