@@ -194,3 +194,20 @@ Distributed under the **MIT License**. See `LICENSE` for more information.
 
 Contributions, issues, and feature requests are welcome!
 Feel free to open an issue or submit a pull request.
+
+## 🤝 Working Screenshots
+
+<img width="1920" height="2608" alt="screencapture-git-code-explainer-onrender-explore-2026-09-27-18_44_07" src="https://github.com/user-attachments/assets/ae75d2ae-7c0e-4b39-b944-214aed26af80" />
+
+---
+
+<img width="1920" height="3132" alt="screencapture-git-code-explainer-onrender-explore-2026-09-27-18_46_42" src="https://github.com/user-attachments/assets/62f06c24-b1aa-4b61-b9a8-78f397aedfd3" />
+
+---
+
+<img width="1920" height="3801" alt="screencapture-git-code-explainer-onrender-explore-2026-09-27-18_47_25" src="https://github.com/user-attachments/assets/9781e67b-37eb-43df-a7f3-2d8384615f3b" />
+
+---
+
+<img width="1920" height="1310" alt="screencapture-git-code-explainer-onrender-issues-2026-09-27-18_49_15" src="https://github.com/user-attachments/assets/3dd9f228-144d-4947-a6da-9c1e9e8df3e4" />
+
