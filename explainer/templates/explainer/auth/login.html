@@ -1,0 +1,37 @@
+{% extends "explainer/base.html" %}
+{% block title %}Sign In · Repo Explainer{% endblock %}
+
+{% block content %}
+<div class="mh-auth-wrapper">
+  <section class="mh-card mh-auth-card">
+    <div class="mh-card-header">
+      <div class="mh-logo-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+      </div>
+      <div>
+        <h1 class="mh-auth-title">Welcome Back</h1>
+        <p class="mh-auth-subtitle">Sign in to your Repo Explainer account to access your repositories and chat histories.</p>
+      </div>
+    </div>
+
+    <form method="post" class="mh-form-stack">
+      {% csrf_token %}
+      <div class="mh-field-group">
+        <label class="mh-label">Username or Email</label>
+        <input name="username" class="mh-input-field" placeholder="developer or dev@example.com" autocomplete="username" required>
+      </div>
+      <div class="mh-field-group">
+        <label class="mh-label">Password</label>
+        <input type="password" name="password" class="mh-input-field" placeholder="••••••••" autocomplete="current-password" required>
+      </div>
+      <button type="submit" class="mh-btn mh-btn-accent mh-btn-full">Sign In</button>
+    </form>
+
+    <div class="mh-auth-footer">
+      <span>Don't have an account?</span>
+      <a href="{% url 'signup' %}" class="mh-link-bold">Create an account</a>
+    </div>
+  </section>
+</div>
+{% endblock %}
+

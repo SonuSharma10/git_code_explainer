@@ -31,11 +31,11 @@ if not SECRET_KEY:
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'False').lower() in ('true', '1', 'yes')
 
-ALLOWED_HOSTS = [
-    host.strip()
-    for host in os.getenv('ALLOWED_HOSTS', '').split(',')
-    if host.strip()
-]
+raw_hosts = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,testserver').split(',')
+ALLOWED_HOSTS = [host.strip() for host in raw_hosts if host.strip()]
+if DEBUG and '*' not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.extend(['testserver', 'localhost', '127.0.0.1', '[::1]'])
+    ALLOWED_HOSTS = list(set(ALLOWED_HOSTS))
 
 
 # Application definition
@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'explainer.apps.ExplainerConfig',
 ]
 
 MIDDLEWARE = [
@@ -61,16 +62,26 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'github_repo_explainer.urls'
 
+AUTHENTICATION_BACKENDS = [
+    'explainer.backends.raw_sql_backend.RawSQLAuthBackend',
+]
+
+LOGIN_URL = '/login/'
+LOGIN_REDIRECT_URL = '/explore/'
+LOGOUT_REDIRECT_URL = '/login/'
+SESSION_ENGINE = 'django.contrib.sessions.backends.signed_cookies'
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'explainer' / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'explainer.context_processors.retro_theme',
             ],
         },
     },
@@ -125,6 +136,21 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.1/howto/static-files/
 
 STATIC_URL = 'static/'
+STATICFILES_DIRS = [BASE_DIR / 'static']
+
+# Application data lives in PostgreSQL via psycopg (see mappers/), not Django ORM.
+DATABASE_URL = os.getenv('DATABASE_URL', '')
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', '')
+GEMINI_MODEL = os.getenv('GEMINI_MODEL', 'gemini-3.1-flash-lite')
+GITHUB_TOKEN = os.getenv('GITHUB_TOKEN', '')
+FERNET_KEY = os.getenv('FERNET_KEY', '')
+ALLOW_SYSTEM_GEMINI_FALLBACK = os.getenv('ALLOW_SYSTEM_GEMINI_FALLBACK', 'True').lower() in (
+    'true',
+    '1',
+    'yes',
+)
+PAST_CONVERSATION_LIMIT = int(os.getenv('PAST_CONVERSATION_LIMIT', '10'))
+REDIS_URL = os.getenv('REDIS_URL', '')
 
 
 # Email

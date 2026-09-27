@@ -1,0 +1,59 @@
+{% extends "explainer/base.html" %}
+{% block title %}Profile & API Key Vault · Repo Explainer{% endblock %}
+
+{% block content %}
+<div class="mh-auth-wrapper">
+  <section class="mh-card mh-auth-card">
+    <div class="mh-card-header">
+      <div class="mh-logo-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      </div>
+      <div>
+        <h1 class="mh-auth-title">Profile & API Key Vault</h1>
+        <p class="mh-auth-subtitle">Custom Gemini API keys are encrypted symmetrically (Fernet) before storage.</p>
+      </div>
+    </div>
+
+    <form method="post" class="mh-form-stack">
+      {% csrf_token %}
+      
+      <div class="mh-field-group">
+        <label class="mh-label">Preferred Theme</label>
+        <select name="preferred_theme" class="mh-select">
+          <option value="dark" {% if not profile or profile.preferred_theme == 'dark' or profile.preferred_theme == 'retro_terminal' %}selected{% endif %}>🌙 Dark Mode (Modern Slate)</option>
+          <option value="light" {% if profile.preferred_theme == 'light' or profile.preferred_theme == 'solar_paper' %}selected{% endif %}>☀️ Light Mode (Clean Warm)</option>
+        </select>
+      </div>
+
+      <div class="mh-key-status-box">
+        <div class="mh-status-indicator {% if has_key %}active{% endif %}"></div>
+        <span class="mh-status-text">
+          {% if has_key %}
+            <strong>Personal Gemini API key active.</strong> Your custom key will be used for all AI requests.
+          {% else %}
+            <strong>No personal Gemini key stored.</strong> Requests fall back to the system GEMINI_API_KEY in .env.
+          {% endif %}
+        </span>
+      </div>
+
+      <div class="mh-field-group">
+        <label class="mh-label">Update Gemini API Key</label>
+        <input type="password" name="gemini_api_key" class="mh-input-field" placeholder="AIzaSy... (leave blank to keep current key)" autocomplete="off">
+        <span class="mh-input-hint">Get an API key at <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer">Google AI Studio</a>.</span>
+      </div>
+
+      <div class="mh-field-group">
+        <label class="mh-toggle-label">
+          <input type="checkbox" name="clear_key" class="mh-checkbox">
+          <span>Remove stored personal API key</span>
+        </label>
+      </div>
+
+      <button type="submit" class="mh-btn mh-btn-accent mh-btn-full">
+        <span>Save Vault Settings</span>
+      </button>
+    </form>
+  </section>
+</div>
+{% endblock %}
+

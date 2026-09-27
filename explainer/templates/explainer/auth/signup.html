@@ -1,0 +1,45 @@
+{% extends "explainer/base.html" %}
+{% block title %}Create Account · Repo Explainer{% endblock %}
+
+{% block content %}
+<div class="mh-auth-wrapper">
+  <section class="mh-card mh-auth-card">
+    <div class="mh-card-header">
+      <div class="mh-logo-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+      </div>
+      <div>
+        <h1 class="mh-auth-title">Create Account</h1>
+        <p class="mh-auth-subtitle">Join Repo Explainer to explore public codebases and debug issues with Gemini AI.</p>
+      </div>
+    </div>
+
+    <form method="post" class="mh-form-stack">
+      {% csrf_token %}
+      <div class="mh-field-group">
+        <label class="mh-label">Username</label>
+        <input name="username" class="mh-input-field" placeholder="username" autocomplete="username" required>
+      </div>
+      <div class="mh-field-group">
+        <label class="mh-label">Email Address</label>
+        <input type="email" name="email" class="mh-input-field" placeholder="dev@example.com" autocomplete="email" required>
+      </div>
+      <div class="mh-field-group">
+        <label class="mh-label">Password</label>
+        <input type="password" name="password" class="mh-input-field" placeholder="••••••••" autocomplete="new-password" required>
+      </div>
+      <div class="mh-field-group">
+        <label class="mh-label">Confirm Password</label>
+        <input type="password" name="password_confirm" class="mh-input-field" placeholder="••••••••" autocomplete="new-password" required>
+      </div>
+      <button type="submit" class="mh-btn mh-btn-accent mh-btn-full">Create Account</button>
+    </form>
+
+    <div class="mh-auth-footer">
+      <span>Already registered?</span>
+      <a href="{% url 'login' %}" class="mh-link-bold">Sign In</a>
+    </div>
+  </section>
+</div>
+{% endblock %}
+

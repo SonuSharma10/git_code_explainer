@@ -1,0 +1,316 @@
+{% extends "explainer/base.html" %}
+{% load static %}
+{% block title %}Explore · Repo Explainer{% endblock %}
+{% block extra_head %}
+<!-- Mermaid.js, Marked.js for Markdown & DOMPurify for security -->
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked@12/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
+
+<!-- Prism.js Code Viewer with One Dark theme & Line Numbers -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/line-numbers/prism-line-numbers.min.css">
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="mh-explore-container" data-explore
+     data-authenticated="{{ user.is_authenticated|yesno:'true,false' }}"
+     data-has-user-key="{{ has_user_key|yesno:'true,false' }}"
+     data-csrf="{{ csrf_token }}">
+
+  <!-- Top Hero Search Bar -->
+  <section class="mh-hero-section" data-hero-section>
+    <div class="mh-hero-top-row">
+      <div>
+        <h1 class="mh-hero-title">Understand any repository</h1>
+        <p class="mh-hero-subtitle">Paste a GitHub repo URL and get instant AI explanations: architecture diagrams, codebase walkthroughs, and issue fixes.</p>
+      </div>
+    </div>
+    
+    <form class="mh-input-row" data-repo-form>
+      <svg class="mh-search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+      </svg>
+      <input class="mh-input" name="url" placeholder="https://github.com/owner/repo (e.g. pallets/flask)" required autocomplete="off">
+      <button class="mh-submit-btn" type="submit" aria-label="Explain repository">
+        <span>Explain</span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+      </button>
+    </form>
+
+    <div class="mh-examples-row">
+      <span class="mh-examples-label">Try an example:</span>
+      <div class="mh-examples-chips">
+        <button type="button" class="mh-chip" data-quick-repo="pallets/flask">pallets/flask</button>
+        <button type="button" class="mh-chip" data-quick-repo="tiangolo/fastapi">tiangolo/fastapi</button>
+        <button type="button" class="mh-chip" data-quick-repo="expressjs/express">expressjs/express</button>
+        <button type="button" class="mh-chip" data-quick-repo="django/django">django/django</button>
+        <button type="button" class="mh-chip" data-quick-repo="facebook/react">facebook/react</button>
+      </div>
+    </div>
+
+    <!-- Repo discovery banner (API keys & setup actions) -->
+    <div class="mh-discovery-bar" data-discovery-bar hidden>
+      <div class="mh-discovery-left">
+        <span class="mh-discovery-tag">🔍 Repo Insights</span>
+        <span class="mh-discovery-info" data-discovery-info></span>
+      </div>
+      <div class="mh-discovery-actions">
+        <a class="mh-btn mh-btn-xs mh-btn-accent" href="{% url 'issues' %}" data-brainstorm-link title="Brainstorm & debug open issues in this repo">
+          🧠 Brainstorm Issues
+        </a>
+      </div>
+    </div>
+
+    <!-- Past Sessions drawer: placed conveniently below Repo Insights and above Code Viewer -->
+    <div class="mh-past-sessions-strip" data-past-strip>
+      <details class="mh-past-accordion">
+        <summary class="mh-past-summary">
+          <span>🕒 Previous AI Chat Sessions ({{ past_conversations|length }})</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+        </summary>
+        <div class="mh-past-list" data-past>
+          {% for item in past_conversations %}
+            <button type="button" class="mh-past-item" data-load-conv="{{ item.conversation_id }}">
+              <span class="mh-past-id">{{ item.conversation_id }}</span>
+              <span class="mh-past-tag">{{ item.session_type }}</span>
+            </button>
+          {% empty %}
+            <div class="mh-muted-text">No previous chat sessions for this repository.</div>
+          {% endfor %}
+        </div>
+      </details>
+    </div>
+
+    <!-- Animated Step-by-Step Repo Loading Checklist -->
+    <div class="mh-checklist-box" data-repo-checklist hidden>
+      <div class="mh-checklist-header">
+        <span class="mh-checklist-title">⚡ Mounting &amp; Inspecting Repository...</span>
+        <span class="mh-checklist-spinner" data-checklist-spinner></span>
+      </div>
+      <div class="mh-checklist-items">
+        <div class="mh-check-step" data-step="validate">
+          <span class="mh-step-icon">⏳</span>
+          <span class="mh-step-label">Validating repository &amp; access permissions</span>
+        </div>
+        <div class="mh-check-step" data-step="tree">
+          <span class="mh-step-icon">⚪</span>
+          <span class="mh-step-label">Fetching Git trees &amp; directory hierarchy</span>
+        </div>
+        <div class="mh-check-step" data-step="keys">
+          <span class="mh-step-icon">⚪</span>
+          <span class="mh-step-label">Scanning environment files &amp; required API keys</span>
+        </div>
+        <div class="mh-check-step" data-step="ready">
+          <span class="mh-step-icon">⚪</span>
+          <span class="mh-step-label">Building interactive code viewer &amp; AI workspace</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Repo status message -->
+    <div class="mh-status-bar" data-repo-status>Enter a public repository to explore.</div>
+  </section>
+
+  <!-- Workspace Container: Defaults to chat-bottom, customizable by user -->
+  <div class="mh-workspace mh-layout-chat-bottom" data-workspace>
+    
+    <!-- Left Pane: File Tree & Recent -->
+    <aside class="mh-card mh-pane mh-tree-pane" data-tree-pane>
+      <!-- View Customizer Switcher located directly above Files & History header -->
+      <div class="mh-layout-picker-bar">
+        <span class="mh-layout-label">View:</span>
+        <div class="mh-layout-picker-group">
+          <button type="button" class="mh-layout-btn active" data-layout-mode="chat-bottom" title="Chat at Bottom (Stacked Editor + Wide Chat)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="8" rx="2"/><rect x="3" y="13" width="18" height="8" rx="2"/></svg>
+            <span>Bottom</span>
+          </button>
+          <button type="button" class="mh-layout-btn" data-layout-mode="three-pane" title="Traditional 3-Pane (Files | Code | Chat)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="5" height="18" rx="1"/><rect x="10" y="3" width="7" height="18" rx="1"/><rect x="19" y="3" width="2" height="18" rx="1"/></svg>
+            <span>3-Pane</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="mh-pane-header">
+        <div class="mh-pane-title" data-tree-title-btn style="cursor: pointer;" title="Click file icon or title to expand/collapse tree">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 8 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>
+          <span>Files &amp; History</span>
+        </div>
+        <div class="mh-pane-actions">
+          <button type="button" class="mh-pane-toggle-btn" data-reset-tree title="Reset tree view and clear code inspector">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+          </button>
+          <button type="button" class="mh-pane-toggle-btn" data-toggle-tree title="Collapse / Expand Tree">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Filter for tree -->
+      <div class="mh-filter-box">
+        <input class="mh-filter-input" data-tree-filter placeholder="Filter files (e.g. .py, utils)...">
+      </div>
+
+      <!-- Recent Repos -->
+      <div class="mh-section-block">
+        <div class="mh-section-header">
+          <span class="mh-section-title">Recent Repos</span>
+        </div>
+        <div class="mh-recent-chips" data-recent>
+          {% for item in recent_repos %}
+            <button type="button" class="mh-recent-pill" data-recent-repo="{{ item.repo_owner }}/{{ item.repo_name }}" title="{{ item.repo_owner }}/{{ item.repo_name }}">
+              {{ item.repo_owner }}/{{ item.repo_name }}
+            </button>
+          {% empty %}
+            <div class="mh-muted-text">No recent repositories.</div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Directory Tree -->
+      <div class="mh-section-block mh-tree-section">
+        <div class="mh-section-header mh-tree-header-row">
+          <span class="mh-section-title">Directory Tree</span>
+          <button type="button" class="mh-mini-copy-btn" data-copy-tree title="Copy entire directory tree structure as formatted text">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+            <span>Copy Tree</span>
+          </button>
+        </div>
+        <div class="mh-tree-view" data-tree>
+          <div class="mh-empty-tree">Mount a repository above to explore the file tree.</div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Center / Top Pane: Code & Markdown Viewer with Branch Switcher -->
+    <section class="mh-card mh-pane mh-code-pane" data-code-pane>
+      <div class="mh-pane-header">
+        <div class="mh-file-info">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+          <span class="mh-active-file" data-file-title>Select a file to inspect</span>
+        </div>
+        <div class="mh-pane-actions">
+          <!-- Branch Switcher Dropdown -->
+          <div class="mh-branch-selector-wrap" data-branch-wrap hidden>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>
+            <select class="mh-branch-select" data-branch-select title="Switch repository branch">
+              <option value="main">main</option>
+            </select>
+          </div>
+          <button type="button" class="mh-btn mh-btn-sm mh-btn-accent" data-arch title="Generate Mermaid Architecture Diagram in Chat">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><circle cx="19" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><path d="M12 9V5"/><path d="m14 14 3.5 3.5"/><path d="m10 10-3.5-3.5"/></svg>
+            Diagram
+          </button>
+          <button type="button" class="mh-btn mh-btn-sm mh-btn-ghost" data-copy-code title="Copy file code">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+            Copy Code
+          </button>
+        </div>
+      </div>
+
+      <!-- Professional Code & Markdown viewer -->
+      <div class="mh-code-container" data-code-container>
+        <!-- Formatted Markdown view (used automatically when viewing README.md or markdown files) -->
+        <div class="mh-markdown-preview" data-markdown-preview hidden></div>
+        <!-- Code syntax viewer with Prism.js line numbers -->
+        <pre class="mh-code-view line-numbers" data-code-pre><code data-code class="language-javascript">// Select any file from the left tree to inspect source code.</code></pre>
+      </div>
+    </section>
+
+    <!-- Bottom / Right Pane: AI Assistant & Explainer with integrated Markdown & Mermaid -->
+    <section class="mh-card mh-pane mh-chat-pane" data-chat-pane>
+      <div class="mh-pane-header">
+        <div class="mh-pane-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
+          <span>AI Explainer</span>
+        </div>
+        <div class="mh-pane-actions">
+          <button type="button" class="mh-btn mh-btn-sm mh-btn-ghost" data-restore-chat title="Restore this repository's conversation history from your browser cache">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+            Restore History
+          </button>
+          <button type="button" class="mh-btn mh-btn-sm mh-btn-ghost" data-clear-chat title="Clear active chat conversation">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+            Clear Chat
+          </button>
+          <a class="mh-btn mh-btn-sm mh-btn-ghost" data-download href="#" title="Download study notes as Markdown">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Export Notes
+          </a>
+        </div>
+      </div>
+
+      <!-- AI Controls Card -->
+      <div class="mh-ai-controls">
+        <div class="mh-control-row-single">
+          <div class="mh-field-group">
+            <div class="mh-field-header-row">
+              <label class="mh-label">Prompt Mode</label>
+              <!-- Hidden input for provider value always set to gemini -->
+              <input type="hidden" data-provider value="gemini">
+              
+              <!-- Powered by Gemini AI key status button / badge -->
+              {% if has_user_key %}
+                <button type="button" class="mh-powered-badge mh-powered-configured" id="geminiStatusBtn" title="Gemini AI is connected with your Vault API key. Click to manage keys.">
+                  <span class="mh-powered-dot"></span>
+                  <span class="mh-powered-text">⚡ Powered by Gemini AI</span>
+                  <span class="mh-powered-key-tag">Vault Key</span>
+                </button>
+              {% elif user.is_authenticated %}
+                <button type="button" class="mh-powered-badge mh-powered-missing" id="geminiStatusBtn" title="No custom Gemini API key configured. Click to open Profile Vault and add your API key.">
+                  <span class="mh-powered-dot"></span>
+                  <span class="mh-powered-text">⚡ Powered by Gemini AI</span>
+                  <span class="mh-powered-key-tag">🔑 Setup Key</span>
+                </button>
+              {% else %}
+                <a href="{% url 'login' %}?next={% url 'explore' %}" class="mh-powered-badge mh-powered-missing" id="geminiStatusBtn" title="Sign in to save your personal Gemini API key.">
+                  <span class="mh-powered-dot"></span>
+                  <span class="mh-powered-text">⚡ Powered by Gemini AI</span>
+                  <span class="mh-powered-key-tag">🔑 Setup Key</span>
+                </a>
+              {% endif %}
+            </div>
+
+            <select class="mh-select" data-prompt>
+              {% for item in prompt_templates %}
+                <option value="{{ item.id }}" title="{{ item.blurb }}" {% if item.id == 'setup_guide' %}selected{% endif %}>{{ item.label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <div class="mh-prompt-hint" data-prompt-help>High-level codebase architecture, prerequisites, local setup steps, and environment configuration.</div>
+      </div>
+
+      <!-- Chat Transcript -->
+      <div class="mh-transcript" data-transcript>
+        <div class="mh-chat-welcome">
+          <div class="mh-welcome-icon">✨</div>
+          <h3>Ask questions about this repo</h3>
+          <p>Flowcharts &amp; architecture diagrams render directly inside the chat bubbles with Markdown and copy buttons!</p>
+        </div>
+      </div>
+
+      <!-- Composer -->
+      <form class="mh-composer" data-chat-form>
+        <div class="mh-composer-wrap">
+          <textarea class="mh-composer-input" name="message" rows="2" placeholder="Ask Gemini about the active file, architecture, setup guide, or README... (Enter to send)" required></textarea>
+          <button class="mh-composer-btn" type="submit" title="Send message">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+          </button>
+        </div>
+      </form>
+    </section>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/chat_workspace.js' %}"></script>
+{% endblock %}
+

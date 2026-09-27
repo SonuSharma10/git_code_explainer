@@ -1,0 +1,103 @@
+{% extends "explainer/base.html" %}
+{% load static %}
+{% block title %}GitHub Issues Debugger · Repo Explainer{% endblock %}
+
+{% block content %}
+<div class="mh-explore-container" data-issues data-csrf="{{ csrf_token }}">
+
+  <!-- Top Hero Search -->
+  <section class="mh-hero-section">
+    <h1 class="mh-hero-title">GitHub Issues & Debugging Hub</h1>
+    <p class="mh-hero-subtitle">Load repository issues, inspect root causes, and generate AI fixes and git diffs with Gemini.</p>
+    
+    <form class="mh-input-row" data-issue-repo>
+      <svg class="mh-search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+      </svg>
+      <input class="mh-input" name="url" placeholder="https://github.com/owner/repo" required autocomplete="off">
+      <button class="mh-submit-btn" type="submit">
+        <span>Load Issues</span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+      </button>
+    </form>
+  </section>
+
+  <div class="mh-workspace mh-issues-workspace">
+    
+    <!-- Left Sidebar: Filters & Recent -->
+    <aside class="mh-card mh-pane mh-issues-sidebar">
+      <div class="mh-pane-header">
+        <div class="mh-pane-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+          <span>Filter Issues</span>
+        </div>
+      </div>
+
+      <div class="mh-filter-box">
+        <input class="mh-filter-input" data-issue-q placeholder="Search issue title or keywords...">
+      </div>
+
+      <div class="mh-section-block">
+        <div class="mh-section-header">
+          <span class="mh-section-title">Recent Repos</span>
+        </div>
+        <div class="mh-recent-chips">
+          {% for item in recent_repos %}
+            <button type="button" class="mh-recent-pill" data-recent-repo="{{ item.repo_owner }}/{{ item.repo_name }}" title="{{ item.repo_owner }}/{{ item.repo_name }}">
+              {{ item.repo_owner }}/{{ item.repo_name }}
+            </button>
+          {% empty %}
+            <div class="mh-muted-text">No recent repositories.</div>
+          {% endfor %}
+        </div>
+      </div>
+    </aside>
+
+    <!-- Center: Issues List -->
+    <section class="mh-card mh-pane mh-issues-list-pane">
+      <div class="mh-pane-header">
+        <div class="mh-pane-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <span>Open Issues</span>
+        </div>
+        <div class="mh-field-group mh-field-sm">
+          <select class="mh-select" data-provider>
+            <option value="gemini" selected>⚡ Gemini</option>
+            <option value="none">Disabled</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="mh-issue-list-scroll" data-issue-list>
+        <div class="mh-empty-tree">Load a repository to view open GitHub issues.</div>
+      </div>
+    </section>
+
+    <!-- Right: AI Debugger Workspace -->
+    <section class="mh-card mh-pane mh-debug-pane">
+      <div class="mh-pane-header">
+        <div class="mh-pane-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+          <span>Fix with Gemini</span>
+        </div>
+      </div>
+
+      <div class="mh-fix-container">
+        <div class="mh-fix-output" data-fix-out>
+          <div class="mh-chat-welcome">
+            <div class="mh-welcome-icon">🔧</div>
+            <h3>Select an issue to analyze</h3>
+            <p>Click "Fix with Gemini" on any issue card to trigger AI root-cause analysis, proposed fixes, and copy-pasteable git diff patches.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/issues_hub.js' %}"></script>
+{% endblock %}
+
