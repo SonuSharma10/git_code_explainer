@@ -4,7 +4,7 @@ from django.shortcuts import render
 from django.views.decorators.http import require_GET, require_POST
 
 from explainer.views.explorer_views import _json_body, _json_error
-from mappers import repo_mapper
+from mappers import profile_mapper, repo_mapper
 from services import gemini_service, github_service
 from services.gemini_service import GeminiServiceError
 from services.github_service import GitHubServiceError

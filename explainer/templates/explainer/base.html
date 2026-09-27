@@ -37,12 +37,6 @@
           Issue Explainer
         </a>
 
-        <!-- About Modal Trigger -->
-        <button class="mh-nav-link mh-about-trigger" type="button" data-about-trigger title="About this platform">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-          About
-        </button>
-
         {% if user.is_authenticated %}
           <!-- Profile Vault Trigger Button -->
           <button class="mh-nav-link mh-vault-trigger" type="button" id="vaultTriggerBtn" aria-haspopup="dialog" aria-expanded="false">
@@ -55,8 +49,7 @@
           </div>
           <a class="mh-btn mh-btn-ghost" href="{% url 'logout' %}">Sign Out</a>
         {% else %}
-          <a class="mh-btn mh-btn-ghost" href="{% url 'login' %}">Sign In</a>
-          <a class="mh-btn mh-btn-accent" href="{% url 'signup' %}">Sign Up</a>
+          <a class="mh-btn mh-btn-accent" href="{% url 'login' %}">Login</a>
         {% endif %}
 
         <!-- Single Color Picker Button triggering 5-Color Palette Dropdown -->
@@ -159,53 +152,54 @@
     </div>
   </div>
   {% endif %}
-  <!-- About Modal (Educational & Learning purpose notice) -->
-  <div class="vault-overlay" id="aboutOverlay" role="dialog" aria-modal="true" aria-label="About Repo Explainer" hidden>
-    <div class="vault-card" style="max-width: 480px;">
-      <div class="vault-header">
-        <div class="vault-header-left">
-          <div class="vault-header-icon" style="background-color: var(--color-panel-hover); color: var(--color-accent);">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-          </div>
-          <div>
-            <h2 class="vault-title">About Repo Explainer</h2>
-            <p class="vault-subtitle">AI-powered codebase intelligence for developers.</p>
-          </div>
-        </div>
-        <button class="vault-close-btn" id="aboutCloseBtn" type="button" aria-label="Close modal">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-        </button>
+  <!-- ============================================================
+       Structured Web Footer: About, Tech Stack & Licensing
+       ============================================================ -->
+  <footer class="mh-footer" id="about">
+    <div class="mh-footer-inner">
+      <div>
+        <div class="mh-footer-brand-title">About Repo Explainer</div>
+        <p class="mh-footer-desc">
+          <strong>Repo Explainer</strong> is designed strictly for <strong>educational and learning purposes</strong>. It assists software engineers, students, and open-source contributors in understanding large unfamiliar codebases, deciphering complex logic flows, and exploring architecture patterns with Google Gemini AI.
+        </p>
+        <p class="mh-footer-desc" style="margin-top: 8px;">
+          Key capabilities include interactive Mermaid architecture flowcharts, real-time API understanding, file-level deep dives, and collaborative issue mentorship.
+        </p>
       </div>
-      <div style="padding: 18px 20px; font-size: 13.5px; line-height: 1.6; color: var(--color-text);">
-        <p style="margin-bottom: 12px;">
-          <strong>Repo Explainer</strong> is designed strictly for <strong>educational and learning purposes</strong>. It assists engineers, students, and open-source contributors in understanding large unfamiliar codebases, deciphering complex logic flows, and exploring architecture patterns with Google Gemini AI.
-        </p>
-        <p style="margin-bottom: 12px; color: var(--color-text-muted);">
-          Key capabilities include interactive Mermaid architecture flowcharts, real-time API understanding, file-level deep dives, and collaborative issue debugging.
-        </p>
-        <div style="padding: 10px 12px; background-color: var(--color-bg-elevated); border: 1px solid var(--color-border); border-radius: var(--radius-md); font-size: 12px; color: var(--color-text-muted);">
-          🔒 All personal Gemini API keys are encrypted at rest using Fernet symmetric encryption and never shared.
-        </div>
+
+      <div>
+        <div class="mh-footer-heading">Platform</div>
+        <ul class="mh-footer-links">
+          <li><a href="{% url 'explore' %}">Repository Explorer</a></li>
+          <li><a href="{% url 'issues' %}">Issue Explainer &amp; Mentor</a></li>
+          <li><a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer">Get Gemini API Key ↗</a></li>
+          {% if user.is_authenticated %}
+            <li><a href="#" onclick="document.getElementById('vaultTriggerBtn')?.click(); return false;">Profile Vault Keys</a></li>
+          {% else %}
+            <li><a href="{% url 'login' %}">Developer Login</a></li>
+          {% endif %}
+        </ul>
+      </div>
+
+      <div>
+        <div class="mh-footer-heading">Legal &amp; Open Source</div>
+        <ul class="mh-footer-links">
+          <li><span>License: <strong>MIT License</strong></span></li>
+          <li><span>Security: <strong>Fernet AES-128 Encryption</strong></span></li>
+          <li><span>Engine: <strong>Google Gemini Pro / Flash</strong></span></li>
+          <li><span>Framework: <strong>Django &amp; Modern JS</strong></span></li>
+        </ul>
       </div>
     </div>
-  </div>
+
+    <div class="mh-footer-bottom">
+      <span>© 2026 Repo Explainer. Built with Google Gemini for open-source developers worldwide.</span>
+      <span>Released under the terms of the MIT Open Source License.</span>
+    </div>
+  </footer>
 
   <script src="{% static 'js/tree_explorer.js' %}"></script>
   {% block extra_js %}{% endblock %}
   <script src="{% static 'js/vault_popup.js' %}"></script>
-  <script>
-    (function () {
-      const trigger = document.querySelector('[data-about-trigger]');
-      const overlay = document.getElementById('aboutOverlay');
-      const closeBtn = document.getElementById('aboutCloseBtn');
-      if (trigger && overlay) {
-        trigger.addEventListener('click', () => { overlay.hidden = false; });
-        closeBtn?.addEventListener('click', () => { overlay.hidden = true; });
-        overlay.addEventListener('click', (e) => {
-          if (e.target === overlay) overlay.hidden = true;
-        });
-      }
-    })();
-  </script>
 </body>
 </html>

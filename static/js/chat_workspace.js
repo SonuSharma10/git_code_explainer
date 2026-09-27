@@ -81,6 +81,30 @@
     });
   }
 
+  // Synchronize vertical expansion in 3-pane mode so all panes expand together smoothly
+  if (window.ResizeObserver && codePane && chatPane) {
+    const syncObserver = new ResizeObserver((entries) => {
+      if (state.layoutMode !== "three-pane") return;
+      for (let entry of entries) {
+        const target = entry.target;
+        const newHeight = target.offsetHeight;
+        if (newHeight > 0) {
+          const treePane = root.querySelector("[data-tree-pane]");
+          if (treePane && Math.abs(treePane.offsetHeight - newHeight) > 10) {
+            treePane.style.height = `${newHeight}px`;
+          }
+          if (target === codePane && chatPane && Math.abs(chatPane.offsetHeight - newHeight) > 10) {
+            chatPane.style.height = `${newHeight}px`;
+          } else if (target === chatPane && codePane && Math.abs(codePane.offsetHeight - newHeight) > 10) {
+            codePane.style.height = `${newHeight}px`;
+          }
+        }
+      }
+    });
+    syncObserver.observe(codePane);
+    syncObserver.observe(chatPane);
+  }
+
   // Initial layout
   applyLayout(state.layoutMode);
 
