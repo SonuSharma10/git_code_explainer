@@ -33,9 +33,25 @@ DEBUG = os.getenv('DEBUG', 'False').lower() in ('true', '1', 'yes')
 
 raw_hosts = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,testserver').split(',')
 ALLOWED_HOSTS = [host.strip() for host in raw_hosts if host.strip()]
+
+# Automatically permit Render external hostname if deployed on Render
+RENDER_EXTERNAL_HOSTNAME = os.getenv('RENDER_EXTERNAL_HOSTNAME')
+if RENDER_EXTERNAL_HOSTNAME:
+    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
+
 if DEBUG and '*' not in ALLOWED_HOSTS:
     ALLOWED_HOSTS.extend(['testserver', 'localhost', '127.0.0.1', '[::1]'])
-    ALLOWED_HOSTS = list(set(ALLOWED_HOSTS))
+ALLOWED_HOSTS = list(set(ALLOWED_HOSTS))
+
+# CSRF Trusted Origins for cloud deployments
+CSRF_TRUSTED_ORIGINS = [
+    'https://*.onrender.com',
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
+]
+extra_origins = os.getenv('CSRF_TRUSTED_ORIGINS', '')
+if extra_origins:
+    CSRF_TRUSTED_ORIGINS.extend([origin.strip() for origin in extra_origins.split(',') if origin.strip()])
 
 
 # Application definition
@@ -52,6 +68,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -137,6 +154,16 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 
 # Application data lives in PostgreSQL via psycopg (see mappers/), not Django ORM.
 DATABASE_URL = os.getenv('DATABASE_URL', '')
