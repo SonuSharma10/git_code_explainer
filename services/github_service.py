@@ -33,9 +33,13 @@ def _headers():
         'User-Agent': 'github-repo-explainer',
         'X-GitHub-Api-Version': '2022-11-28',
     }
-    token = getattr(settings, 'GITHUB_TOKEN', '') or os.getenv('GITHUB_TOKEN', '')
+    raw_token = getattr(settings, 'GITHUB_TOKEN', '') or os.getenv('GITHUB_TOKEN', '')
+    token = (raw_token or '').strip().strip('"').strip("'")
     if token:
-        headers['Authorization'] = f'Bearer {token}'
+        if token.lower().startswith('bearer ') or token.lower().startswith('token '):
+            headers['Authorization'] = token
+        else:
+            headers['Authorization'] = f'Bearer {token}'
     return headers
 
 

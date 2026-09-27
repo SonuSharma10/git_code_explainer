@@ -22,9 +22,14 @@
   const searchInput = root.querySelector("[data-issue-id-input]");
   const searchBtn = root.querySelector("[data-issue-id-search-btn]");
 
+  if (searchInput) {
+    searchInput.value = "";
+  }
+
   // Load repo from top form
   root.querySelector("[data-issue-repo]")?.addEventListener("submit", async (event) => {
     event.preventDefault();
+    if (searchInput) searchInput.value = "";
     await loadRepoUrl(event.target.url.value);
   });
 
