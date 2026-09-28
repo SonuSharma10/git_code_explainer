@@ -10,18 +10,6 @@ Navigating large, unfamiliar codebases is often intimidating and time-consuming.
 
 Try it: https://git-code-explainer.onrender.com
 
-<details>
-  
-<summary> 
-  
-### For Testing only 1 day validity Gemini API key</summary>
-
-```
-AQ.Ab8RN6LaJH5YsSHbvAxFRxLyBx-OrWKqroLyRFMEABcenJybWw
-```
-
-</details>
-
 ---
 
 ## ✨ Key Features
